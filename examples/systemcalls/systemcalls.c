@@ -1,3 +1,12 @@
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/syslog.h>
+#include <sys/types.h>
+#include <syslog.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include "systemcalls.h"
 
 /**
@@ -16,6 +25,14 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+    errno = 0;
+    int res = system(cmd);
+    if ((WIFEXITED(res) && WEXITSTATUS(res) != 0) ||
+        ((!WIFEXITED(res) && res == -1 && errno != 0)))
+    {
+        syslog(LOG_ERR, "Failed to run 'system' call");
+        return false;
+    }
 
     return true;
 }
@@ -47,7 +64,7 @@ bool do_exec(int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    // command[count] = command[count];
 
 /*
  * TODO:
@@ -58,6 +75,23 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    pid_t pid = fork();
+    if (pid == -1) {
+        syslog(LOG_ERR, "fork() failed");
+        return false;
+    }
+    if (pid == 0) {
+        execv(command[0], command);
+        syslog(LOG_ERR, "execv() failed");
+        exit(-1);
+    }
+
+    int status = 0;
+    wait(&status);
+    if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+        va_end(args);
+        return false;
+    }
 
     va_end(args);
 
@@ -82,7 +116,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    // command[count] = command[count];
 
 
 /*
@@ -92,6 +126,27 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        syslog(LOG_ERR, "fork() failed");
+        return false;
+    }
+    if (pid == 0) {
+        FILE *file = fopen(outputfile, "w");
+        dup2(fileno(file), STDOUT_FILENO);
+
+        execv(command[0], command);
+        syslog(LOG_ERR, "execv() failed");
+        exit(-1);
+    }
+
+    int status = 0;
+    wait(&status);
+    if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+        va_end(args);
+        return false;
+    }
 
     va_end(args);
 
