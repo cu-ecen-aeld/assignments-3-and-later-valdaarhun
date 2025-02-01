@@ -1,3 +1,4 @@
+#!/bin/sh
 if [ $# -ne 2 ]
 then
     echo "Only two arguments should be passed"
