@@ -5,7 +5,7 @@
 set -e
 set -u
 
-OUTDIR=/tmp/aesd-autograder
+OUTDIR=/tmp/aeld
 KERNEL_REPO=https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
 KERNEL_VERSION=v6.12.11
 BUSYBOX_VERSION=1_37_stable
