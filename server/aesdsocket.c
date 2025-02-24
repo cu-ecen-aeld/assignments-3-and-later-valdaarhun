@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
         .sin_family = AF_INET,
         .sin_port = htons(9000),
         .sin_addr = {
-            .s_addr = htonl(INADDR_LOOPBACK),
+            .s_addr = htonl(INADDR_ANY),
         }
     };
 
